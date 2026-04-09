@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # BEGIN EVAL UTILS
+import torch
+import torch.nn as nn
 INIT_PARAM_NAMES = ['kernel_size', 'stride', 'padding', 'dilation', 'return_indices']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
@@ -10,8 +12,6 @@ REQUIRED_STATE_NAMES = ['maxpool_kernel_size', 'maxpool_stride', 'maxpool_paddin
 REQUIRED_FLAT_STATE_NAMES = []
 
 
-import torch
-import torch.nn as nn
 class ModelNew(nn.Module):
     """
     Simple model that performs Max Pooling 1D.

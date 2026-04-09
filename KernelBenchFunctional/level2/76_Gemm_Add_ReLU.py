@@ -3,15 +3,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # BEGIN EVAL UTILS
+import torch
+import torch.nn as nn
 INIT_PARAM_NAMES = ['in_features', 'out_features', 'bias_shape']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['gemm_weight', 'gemm_bias', 'bias']
-REQUIRED_FLAT_STATE_NAMES = ['gemm_weight', 'gemm_bias', 'bias']
+REQUIRED_STATE_NAMES = ['gemm_weight', 'bias']
+REQUIRED_FLAT_STATE_NAMES = ['gemm_weight', 'bias']
 
 
-import torch
-import torch.nn as nn
 class ModelNew(nn.Module):
     """
     Simple model that performs a matrix multiplication, adds a bias term, and applies ReLU.
@@ -47,10 +47,6 @@ def extract_state_kwargs(model):
         state_kwargs['gemm_weight'] = flat_state['gemm_weight']
     else:
         state_kwargs['gemm_weight'] = getattr(model.gemm, 'weight', None)
-    if 'gemm_bias' in flat_state:
-        state_kwargs['gemm_bias'] = flat_state['gemm_bias']
-    else:
-        state_kwargs['gemm_bias'] = getattr(model.gemm, 'bias', None)
     if 'bias' in flat_state:
         state_kwargs['bias'] = flat_state['bias']
     else:
@@ -74,10 +70,9 @@ def functional_model(
     x,
     *,
     gemm_weight,
-    gemm_bias,
     bias,
 ):
-    x = F.linear(x, gemm_weight, gemm_bias)
+    x = F.linear(x, gemm_weight, None)
     x = x + bias
     x = torch.relu(x)
     return x

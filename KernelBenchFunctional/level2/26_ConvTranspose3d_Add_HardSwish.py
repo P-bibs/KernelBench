@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # BEGIN EVAL UTILS
+import torch
+import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size', 'stride', 'padding', 'output_padding', 'bias_shape']
 FORWARD_ARG_NAMES = ['x', 'add_input']
 FORWARD_FREE_VARS = []
@@ -10,8 +12,6 @@ REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'conv_tr
 REQUIRED_FLAT_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'bias']
 
 
-import torch
-import torch.nn as nn
 class ModelNew(nn.Module):
     """
     ModelNew that performs a 3D transposed convolution, adds an input tensor, and applies HardSwish activation.

@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # BEGIN EVAL UTILS
+import torch
+import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size', 'stride', 'padding', 'dilation', 'groups', 'bias']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
@@ -10,8 +12,6 @@ REQUIRED_STATE_NAMES = ['conv1d_weight', 'conv1d_bias', 'conv1d_stride', 'conv1d
 REQUIRED_FLAT_STATE_NAMES = ['conv1d_weight', 'conv1d_bias']
 
 
-import torch
-import torch.nn as nn
 class ModelNew(nn.Module):
     """
     Performs a standard 1D convolution operation.

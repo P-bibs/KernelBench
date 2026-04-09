@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # BEGIN EVAL UTILS
+import torch
+import torch.nn as nn
 INIT_PARAM_NAMES = []
 FORWARD_ARG_NAMES = ['A', 'B']
 FORWARD_FREE_VARS = []
@@ -10,8 +12,6 @@ REQUIRED_STATE_NAMES = []
 REQUIRED_FLAT_STATE_NAMES = []
 
 
-import torch
-import torch.nn as nn
 class ModelNew(nn.Module):
     """
     Performs batched matrix multiplication (C = A * B) where A, B, and C have the same batch dimension.

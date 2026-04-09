@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # BEGIN EVAL UTILS
+import torch
+import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
@@ -10,8 +12,6 @@ REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'conv_stride', 'conv_padding
 REQUIRED_FLAT_STATE_NAMES = ['conv_weight', 'conv_bias']
 
 
-import torch
-import torch.nn as nn
 class ModelNew(nn.Module):
     """
     ModelNew that performs a convolution, applies HardSwish, and then ReLU.

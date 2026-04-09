@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # BEGIN EVAL UTILS
+import torch
+import torch.nn as nn
 INIT_PARAM_NAMES = ['in_features', 'out_features', 'subtract_value', 'multiply_value']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
@@ -10,8 +12,6 @@ REQUIRED_STATE_NAMES = ['linear_weight', 'linear_bias', 'subtract_value', 'multi
 REQUIRED_FLAT_STATE_NAMES = ['linear_weight', 'linear_bias']
 
 
-import torch
-import torch.nn as nn
 class ModelNew(nn.Module):
     """
     ModelNew that performs a matrix multiplication, subtraction, multiplication, and ReLU activation.
