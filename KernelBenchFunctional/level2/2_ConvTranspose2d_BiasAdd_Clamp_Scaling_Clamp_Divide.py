@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'conv_tr
 REQUIRED_FLAT_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'bias']
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     ModelNew that performs a transposed convolution, adds a bias term, clamps, scales, clamps, and divides.

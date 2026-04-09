@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = ['dim']
 REQUIRED_FLAT_STATE_NAMES = []
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     Simple model that performs sum reduction over a specified dimension.

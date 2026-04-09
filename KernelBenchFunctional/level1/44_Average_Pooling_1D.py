@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = ['avg_pool_kernel_size', 'avg_pool_stride', 'avg_pool_pad
 REQUIRED_FLAT_STATE_NAMES = []
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     Simple model that performs 1D Average Pooling.

@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = ['maxpool_kernel_size', 'maxpool_stride', 'maxpool_paddin
 REQUIRED_FLAT_STATE_NAMES = []
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     Simple model that performs Max Pooling 1D.

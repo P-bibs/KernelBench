@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = ['gemm_weight', 'gemm_bias', 'bias']
 REQUIRED_FLAT_STATE_NAMES = ['gemm_weight', 'gemm_bias', 'bias']
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     Simple model that performs a matrix multiplication, adds a bias term, and applies ReLU.

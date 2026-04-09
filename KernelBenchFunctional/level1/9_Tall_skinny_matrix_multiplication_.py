@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = []
 REQUIRED_FLAT_STATE_NAMES = []
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     Simple model that performs a single matrix multiplication (C = A * B) where one of the matrices is tall and skinny (M >> N or N >> M)

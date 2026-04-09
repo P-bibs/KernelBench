@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'conv_tr
 REQUIRED_FLAT_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias']
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     A model that performs a transposed 3D convolution, clamps the output to a minimum value, 

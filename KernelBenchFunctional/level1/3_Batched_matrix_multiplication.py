@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = []
 REQUIRED_FLAT_STATE_NAMES = []
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     Performs batched matrix multiplication (C = A * B) where A, B, and C have the same batch dimension.

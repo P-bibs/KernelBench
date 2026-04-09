@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = []
 REQUIRED_FLAT_STATE_NAMES = []
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     A model that computes the Mean Squared Error loss for regression tasks.

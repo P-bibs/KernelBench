@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = ['bmm_weight', 'bmm_bias', 'instance_norm_running_mean', 
 REQUIRED_FLAT_STATE_NAMES = ['bmm_weight', 'bmm_bias', 'instance_norm_running_mean', 'instance_norm_running_var', 'instance_norm_weight', 'instance_norm_bias']
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     ModelNew that performs a batch matrix multiplication, instance normalization, summation, residual addition, and multiplication.

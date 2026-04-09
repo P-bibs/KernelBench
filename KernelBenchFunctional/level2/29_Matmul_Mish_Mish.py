@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = ['linear_weight', 'linear_bias']
 REQUIRED_FLAT_STATE_NAMES = ['linear_weight', 'linear_bias']
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     Simple model that performs a matrix multiplication, applies Mish, and applies Mish again.

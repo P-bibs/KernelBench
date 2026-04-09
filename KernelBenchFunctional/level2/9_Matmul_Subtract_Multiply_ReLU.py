@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = ['linear_weight', 'linear_bias', 'subtract_value', 'multi
 REQUIRED_FLAT_STATE_NAMES = ['linear_weight', 'linear_bias']
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     ModelNew that performs a matrix multiplication, subtraction, multiplication, and ReLU activation.

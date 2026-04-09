@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = ['conv1d_weight', 'conv1d_bias', 'conv1d_stride', 'conv1d
 REQUIRED_FLAT_STATE_NAMES = ['conv1d_weight', 'conv1d_bias']
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     Performs a standard 1D convolution operation.

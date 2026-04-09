@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'conv_stride', 'conv_padding
 REQUIRED_FLAT_STATE_NAMES = ['conv_weight', 'conv_bias']
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     ModelNew that performs a convolution, applies minimum operation, Tanh, and another Tanh.

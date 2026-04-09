@@ -10,6 +10,8 @@ REQUIRED_STATE_NAMES = ['matmul_weight', 'matmul_bias', 'max_pool_kernel_size', 
 REQUIRED_FLAT_STATE_NAMES = ['matmul_weight', 'matmul_bias']
 
 
+import torch
+import torch.nn as nn
 class ModelNew(nn.Module):
     """
     ModelNew that performs matrix multiplication, max pooling, sum, and scaling.
