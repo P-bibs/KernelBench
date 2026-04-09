@@ -24,6 +24,45 @@ gpu_arch_mapping = {
     "A10G": ["Ampere"]
 }
 
+
+def _normalize_gpu_arch(gpu_arch):
+    if gpu_arch is None:
+        return []
+    if isinstance(gpu_arch, list):
+        return gpu_arch
+    return [gpu_arch]
+
+
+def _infer_local_gpu_arch(device: torch.device) -> list[str]:
+    """
+    Infer the current NVIDIA architecture name from compute capability.
+
+    This keeps local extension builds aligned with the actual visible CUDA
+    device instead of relying on the modal-oriented default.
+    """
+    major, minor = torch.cuda.get_device_capability(device)
+    if major == 5:
+        arch = "Maxwell"
+    elif major == 6:
+        arch = "Pascal"
+    elif major == 7 and minor == 5:
+        arch = "Turing"
+    elif major == 7:
+        arch = "Volta"
+    elif major == 8 and minor == 9:
+        arch = "Ada"
+    elif major == 8:
+        arch = "Ampere"
+    elif major == 9:
+        arch = "Hopper"
+    elif major >= 10:
+        arch = "Blackwell"
+    else:
+        raise ValueError(
+            f"Unsupported CUDA compute capability {major}.{minor} for local arch inference"
+        )
+    return [arch]
+
 REPO_TOP_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 cuda_version = "13.0.0"
@@ -299,7 +338,13 @@ def main(config: ScriptConfig):
     if config.eval_mode == "local":
         # Local evaluation (existing code path)
         device = torch.device("cuda:0")
+        config.gpu_arch = _normalize_gpu_arch(config.gpu_arch)
+        if not config.gpu_arch or config.gpu_arch == ["Ada"]:
+            config.gpu_arch = _infer_local_gpu_arch(device)
         kernel_utils.set_gpu_arch(config.gpu_arch)
+        print(
+            f"[INFO] Using local GPU {torch.cuda.get_device_name(device)} with architecture: {config.gpu_arch}"
+        )
 
         print("[INFO] Evaluating kernel against reference code (LOCAL)")
         # Evaluate kernel against reference code
