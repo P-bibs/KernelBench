@@ -100,6 +100,51 @@ def get_tolerance_for_precision(precision: str | torch.dtype) -> float:
     }
     assert precision in PRECISION_TOLERANCES, f"Invalid precision not supported: {precision}"
     return PRECISION_TOLERANCES[precision]
+
+
+def _allclose_chunked(
+    output: torch.Tensor,
+    output_new: torch.Tensor,
+    *,
+    atol: float,
+    rtol: float,
+    max_chunk_bytes: int = 256 * 1024 * 1024,
+) -> tuple[bool, float, float]:
+    """
+    Compare large tensors without allocating full-size temporary buffers.
+
+    `torch.allclose` can briefly require an additional tensor-sized temporary,
+    which OOMs for very large outputs. This helper compares flattened chunks
+    and accumulates diff statistics incrementally instead.
+    """
+    if output.shape != output_new.shape:
+        return False, float("nan"), float("nan")
+
+    element_bytes = max(output.element_size(), output_new.element_size(), 4)
+    chunk_numel = max(1, max_chunk_bytes // (element_bytes * 4))
+    flat_output = output.reshape(-1)
+    flat_output_new = output_new.reshape(-1)
+
+    match = True
+    max_diff = 0.0
+    total_abs_diff = 0.0
+    total_numel = flat_output.numel()
+
+    for start in range(0, total_numel, chunk_numel):
+        chunk_len = min(chunk_numel, total_numel - start)
+        output_chunk = flat_output.narrow(0, start, chunk_len)
+        output_new_chunk = flat_output_new.narrow(0, start, chunk_len)
+
+        abs_diff = torch.abs(output_chunk - output_new_chunk)
+        allowed_diff = atol + rtol * torch.abs(output_new_chunk)
+        if not torch.all(abs_diff <= allowed_diff):
+            match = False
+
+        max_diff = max(max_diff, torch.max(abs_diff).item())
+        total_abs_diff += torch.sum(abs_diff).item()
+
+    avg_diff = total_abs_diff / total_numel if total_numel else 0.0
+    return match, max_diff, avg_diff
     
 
 class KernelExecResult(BaseModel):
@@ -756,6 +801,11 @@ def run_and_check_correctness(
     with torch.no_grad():
 
         for trial in range(num_correct_trials):
+            inputs = None
+            model = None
+            model_new = None
+            output = None
+            output_new = None
 
             trial_seed = correctness_trial_seeds[trial]
             if verbose:
@@ -801,11 +851,13 @@ def run_and_check_correctness(
                 # now we will return the tolerance from get_tolerance_for_precision
                 tolerance = get_tolerance_for_precision(precision)
                 # check output value difference
-                if not torch.allclose(
-                    output, output_new, atol=tolerance, rtol=tolerance
-                ):  # fail
-                    max_diff = torch.max(torch.abs(output - output_new)).item()
-                    avg_diff = torch.mean(torch.abs(output - output_new)).item()
+                match, max_diff, avg_diff = _allclose_chunked(
+                    output,
+                    output_new,
+                    atol=tolerance,
+                    rtol=tolerance,
+                )
+                if not match:  # fail
                     metadata.setdefault("max_difference", []).append(f"{max_diff:.6f}")
                     metadata.setdefault("avg_difference", []).append(f"{avg_diff:.6f}")
                     metadata["correctness_issue"] = "Output mismatch"
@@ -833,6 +885,10 @@ def run_and_check_correctness(
                     compiled=True, correctness=False, metadata=metadata
                 )
                 # break
+            finally:
+                del output_new, output, model_new, model, inputs
+                if device is not None and device.type == "cuda":
+                    torch.cuda.empty_cache()
 
     if verbose:
         print(
