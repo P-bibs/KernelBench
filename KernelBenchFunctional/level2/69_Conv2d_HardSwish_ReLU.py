@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'conv_stride', 'conv_padding', 'conv_dilation', 'conv_groups']
+REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias']
 REQUIRED_FLAT_STATE_NAMES = ['conv_weight', 'conv_bias']
 
 
@@ -50,10 +50,6 @@ def extract_state_kwargs(model):
         state_kwargs['conv_bias'] = flat_state['conv_bias']
     else:
         state_kwargs['conv_bias'] = getattr(model.conv, 'bias', None)
-    state_kwargs['conv_stride'] = model.conv.stride
-    state_kwargs['conv_padding'] = model.conv.padding
-    state_kwargs['conv_dilation'] = model.conv.dilation
-    state_kwargs['conv_groups'] = model.conv.groups
     missing = [name for name in REQUIRED_STATE_NAMES if name not in state_kwargs]
     if missing:
         raise RuntimeError(f'Missing required state entries: {missing}')
@@ -74,12 +70,8 @@ def functional_model(
     *,
     conv_weight,
     conv_bias,
-    conv_stride,
-    conv_padding,
-    conv_dilation,
-    conv_groups,
 ):
-    x = F.conv2d(x, conv_weight, conv_bias, stride=conv_stride, padding=conv_padding, dilation=conv_dilation, groups=conv_groups)
+    x = F.conv2d(x, conv_weight, conv_bias)
     x = torch.nn.functional.hardswish(x)
     x = torch.relu(x)
     return x

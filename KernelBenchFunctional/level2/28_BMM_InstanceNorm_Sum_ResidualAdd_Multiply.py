@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_features', 'out_features', 'eps', 'momentum']
 FORWARD_ARG_NAMES = ['x', 'y']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['bmm_weight', 'bmm_bias', 'instance_norm_running_mean', 'instance_norm_running_var', 'instance_norm_weight', 'instance_norm_bias', 'instance_norm_use_input_stats', 'instance_norm_momentum', 'instance_norm_eps']
+REQUIRED_STATE_NAMES = ['bmm_weight', 'bmm_bias', 'instance_norm_running_mean', 'instance_norm_running_var', 'instance_norm_weight', 'instance_norm_bias', 'instance_norm_momentum', 'instance_norm_eps']
 REQUIRED_FLAT_STATE_NAMES = ['bmm_weight', 'bmm_bias', 'instance_norm_running_mean', 'instance_norm_running_var', 'instance_norm_weight', 'instance_norm_bias']
 
 
@@ -68,7 +68,6 @@ def extract_state_kwargs(model):
         state_kwargs['instance_norm_bias'] = flat_state['instance_norm_bias']
     else:
         state_kwargs['instance_norm_bias'] = getattr(model.instance_norm, 'bias', None)
-    state_kwargs['instance_norm_use_input_stats'] = not model.instance_norm.track_running_stats
     state_kwargs['instance_norm_momentum'] = model.instance_norm.momentum
     state_kwargs['instance_norm_eps'] = model.instance_norm.eps
     missing = [name for name in REQUIRED_STATE_NAMES if name not in state_kwargs]
@@ -96,12 +95,11 @@ def functional_model(
     instance_norm_running_var,
     instance_norm_weight,
     instance_norm_bias,
-    instance_norm_use_input_stats,
     instance_norm_momentum,
     instance_norm_eps,
 ):
     x = F.linear(x, bmm_weight, bmm_bias)
-    x = F.instance_norm(x.unsqueeze(1).unsqueeze(1), instance_norm_running_mean, instance_norm_running_var, instance_norm_weight, instance_norm_bias, use_input_stats=instance_norm_use_input_stats, momentum=instance_norm_momentum, eps=instance_norm_eps).squeeze(1).squeeze(1)
+    x = F.instance_norm(x.unsqueeze(1).unsqueeze(1), instance_norm_running_mean, instance_norm_running_var, instance_norm_weight, instance_norm_bias, momentum=instance_norm_momentum, eps=instance_norm_eps).squeeze(1).squeeze(1)
     x = x + y
     x = x * y
     return x

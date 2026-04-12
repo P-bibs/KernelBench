@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size', 'stride', 'padding', 'output_padding', 'bias_shape', 'scaling_factor']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'conv_transpose_stride', 'conv_transpose_padding', 'conv_transpose_output_padding', 'conv_transpose_groups', 'conv_transpose_dilation', 'bias', 'scaling_factor']
+REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'conv_transpose_stride', 'conv_transpose_padding', 'conv_transpose_output_padding', 'bias', 'scaling_factor']
 REQUIRED_FLAT_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'bias']
 
 
@@ -55,8 +55,6 @@ def extract_state_kwargs(model):
     state_kwargs['conv_transpose_stride'] = model.conv_transpose.stride
     state_kwargs['conv_transpose_padding'] = model.conv_transpose.padding
     state_kwargs['conv_transpose_output_padding'] = model.conv_transpose.output_padding
-    state_kwargs['conv_transpose_groups'] = model.conv_transpose.groups
-    state_kwargs['conv_transpose_dilation'] = model.conv_transpose.dilation
     if 'bias' in flat_state:
         state_kwargs['bias'] = flat_state['bias']
     else:
@@ -88,12 +86,10 @@ def functional_model(
     conv_transpose_stride,
     conv_transpose_padding,
     conv_transpose_output_padding,
-    conv_transpose_groups,
-    conv_transpose_dilation,
     bias,
     scaling_factor,
 ):
-    x = F.conv_transpose2d(x, conv_transpose_weight, conv_transpose_bias, stride=conv_transpose_stride, padding=conv_transpose_padding, output_padding=conv_transpose_output_padding, groups=conv_transpose_groups, dilation=conv_transpose_dilation)
+    x = F.conv_transpose2d(x, conv_transpose_weight, conv_transpose_bias, stride=conv_transpose_stride, padding=conv_transpose_padding, output_padding=conv_transpose_output_padding)
     x = x + bias
     x = torch.clamp(x, min=0.0, max=1.0)
     x = x * scaling_factor

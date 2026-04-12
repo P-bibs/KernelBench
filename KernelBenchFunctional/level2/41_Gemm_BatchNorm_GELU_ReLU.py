@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_features', 'out_features']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['gemm_weight', 'gemm_bias', 'batch_norm_running_mean', 'batch_norm_running_var', 'batch_norm_weight', 'batch_norm_bias', 'batch_norm_momentum', 'batch_norm_eps']
+REQUIRED_STATE_NAMES = ['gemm_weight', 'gemm_bias', 'batch_norm_running_mean', 'batch_norm_running_var', 'batch_norm_weight', 'batch_norm_bias']
 REQUIRED_FLAT_STATE_NAMES = ['gemm_weight', 'gemm_bias', 'batch_norm_running_mean', 'batch_norm_running_var', 'batch_norm_weight', 'batch_norm_bias']
 
 
@@ -68,8 +68,6 @@ def extract_state_kwargs(model):
         state_kwargs['batch_norm_bias'] = flat_state['batch_norm_bias']
     else:
         state_kwargs['batch_norm_bias'] = getattr(model.batch_norm, 'bias', None)
-    state_kwargs['batch_norm_momentum'] = model.batch_norm.momentum
-    state_kwargs['batch_norm_eps'] = model.batch_norm.eps
     missing = [name for name in REQUIRED_STATE_NAMES if name not in state_kwargs]
     if missing:
         raise RuntimeError(f'Missing required state entries: {missing}')
@@ -94,11 +92,9 @@ def functional_model(
     batch_norm_running_var,
     batch_norm_weight,
     batch_norm_bias,
-    batch_norm_momentum,
-    batch_norm_eps,
 ):
     x = F.linear(x, gemm_weight, gemm_bias)
-    x = F.batch_norm(x, batch_norm_running_mean, batch_norm_running_var, batch_norm_weight, batch_norm_bias, training=False, momentum=batch_norm_momentum, eps=batch_norm_eps)
+    x = F.batch_norm(x, batch_norm_running_mean, batch_norm_running_var, batch_norm_weight, batch_norm_bias, training=False)
     x = torch.nn.functional.gelu(x)
     x = torch.relu(x)
     return x

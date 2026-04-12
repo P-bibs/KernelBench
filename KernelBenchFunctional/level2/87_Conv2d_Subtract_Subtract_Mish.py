@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size', 'subtract_value_1', 'subtract_value_2']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'conv_stride', 'conv_padding', 'conv_dilation', 'conv_groups', 'subtract_value_1', 'subtract_value_2']
+REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'subtract_value_1', 'subtract_value_2']
 REQUIRED_FLAT_STATE_NAMES = ['conv_weight', 'conv_bias']
 
 
@@ -52,10 +52,6 @@ def extract_state_kwargs(model):
         state_kwargs['conv_bias'] = flat_state['conv_bias']
     else:
         state_kwargs['conv_bias'] = getattr(model.conv, 'bias', None)
-    state_kwargs['conv_stride'] = model.conv.stride
-    state_kwargs['conv_padding'] = model.conv.padding
-    state_kwargs['conv_dilation'] = model.conv.dilation
-    state_kwargs['conv_groups'] = model.conv.groups
     if 'subtract_value_1' in flat_state:
         state_kwargs['subtract_value_1'] = flat_state['subtract_value_1']
     else:
@@ -84,14 +80,10 @@ def functional_model(
     *,
     conv_weight,
     conv_bias,
-    conv_stride,
-    conv_padding,
-    conv_dilation,
-    conv_groups,
     subtract_value_1,
     subtract_value_2,
 ):
-    x = F.conv2d(x, conv_weight, conv_bias, stride=conv_stride, padding=conv_padding, dilation=conv_dilation, groups=conv_groups)
+    x = F.conv2d(x, conv_weight, conv_bias)
     x = x - subtract_value_1
     x = x - subtract_value_2
     x = torch.nn.functional.mish(x)

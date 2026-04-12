@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['input_size', 'hidden_size', 'num_groups', 'eps', 'negative_slope']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['fc_weight', 'fc_bias', 'gn_weight', 'gn_bias', 'gn_num_groups', 'gn_eps', 'leaky_relu_negative_slope', 'leaky_relu_inplace']
+REQUIRED_STATE_NAMES = ['fc_weight', 'fc_bias', 'gn_weight', 'gn_bias', 'gn_num_groups', 'gn_eps', 'leaky_relu_negative_slope']
 REQUIRED_FLAT_STATE_NAMES = ['fc_weight', 'fc_bias', 'gn_weight', 'gn_bias']
 
 
@@ -65,7 +65,6 @@ def extract_state_kwargs(model):
     state_kwargs['gn_eps'] = model.gn.eps
     # State for leaky_relu (nn.LeakyReLU)
     state_kwargs['leaky_relu_negative_slope'] = model.leaky_relu.negative_slope
-    state_kwargs['leaky_relu_inplace'] = model.leaky_relu.inplace
     missing = [name for name in REQUIRED_STATE_NAMES if name not in state_kwargs]
     if missing:
         raise RuntimeError(f'Missing required state entries: {missing}')
@@ -91,11 +90,10 @@ def functional_model(
     gn_num_groups,
     gn_eps,
     leaky_relu_negative_slope,
-    leaky_relu_inplace,
 ):
     x = F.linear(x, fc_weight, fc_bias)
     x = F.group_norm(x, gn_num_groups, gn_weight, gn_bias, eps=gn_eps)
-    x = F.leaky_relu(x, negative_slope=leaky_relu_negative_slope, inplace=leaky_relu_inplace)
+    x = F.leaky_relu(x, negative_slope=leaky_relu_negative_slope)
     x = x + x
     return x
 batch_size = 1024

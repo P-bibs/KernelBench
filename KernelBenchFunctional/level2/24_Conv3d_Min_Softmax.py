@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size', 'dim']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'conv_stride', 'conv_padding', 'conv_dilation', 'conv_groups', 'dim']
+REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'dim']
 REQUIRED_FLAT_STATE_NAMES = ['conv_weight', 'conv_bias']
 
 
@@ -52,10 +52,6 @@ def extract_state_kwargs(model):
         state_kwargs['conv_bias'] = flat_state['conv_bias']
     else:
         state_kwargs['conv_bias'] = getattr(model.conv, 'bias', None)
-    state_kwargs['conv_stride'] = model.conv.stride
-    state_kwargs['conv_padding'] = model.conv.padding
-    state_kwargs['conv_dilation'] = model.conv.dilation
-    state_kwargs['conv_groups'] = model.conv.groups
     if 'dim' in flat_state:
         state_kwargs['dim'] = flat_state['dim']
     else:
@@ -80,13 +76,9 @@ def functional_model(
     *,
     conv_weight,
     conv_bias,
-    conv_stride,
-    conv_padding,
-    conv_dilation,
-    conv_groups,
     dim,
 ):
-    x = F.conv3d(x, conv_weight, conv_bias, stride=conv_stride, padding=conv_padding, dilation=conv_dilation, groups=conv_groups)
+    x = F.conv3d(x, conv_weight, conv_bias)
     x = torch.min(x, dim=dim)[0]
     x = torch.softmax(x, dim=1)
     return x

@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_features', 'out_features', 'num_groups', 'bias_shape']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['gemm_weight', 'gemm_bias', 'group_norm_weight', 'group_norm_bias', 'group_norm_num_groups', 'group_norm_eps', 'bias']
+REQUIRED_STATE_NAMES = ['gemm_weight', 'gemm_bias', 'group_norm_weight', 'group_norm_bias', 'group_norm_num_groups', 'bias']
 REQUIRED_FLAT_STATE_NAMES = ['gemm_weight', 'gemm_bias', 'group_norm_weight', 'group_norm_bias', 'bias']
 
 
@@ -62,7 +62,6 @@ def extract_state_kwargs(model):
     else:
         state_kwargs['group_norm_bias'] = getattr(model.group_norm, 'bias', None)
     state_kwargs['group_norm_num_groups'] = model.group_norm.num_groups
-    state_kwargs['group_norm_eps'] = model.group_norm.eps
     if 'bias' in flat_state:
         state_kwargs['bias'] = flat_state['bias']
     else:
@@ -90,11 +89,10 @@ def functional_model(
     group_norm_weight,
     group_norm_bias,
     group_norm_num_groups,
-    group_norm_eps,
     bias,
 ):
     x = F.linear(x, gemm_weight, gemm_bias)
-    x = F.group_norm(x, group_norm_num_groups, group_norm_weight, group_norm_bias, eps=group_norm_eps)
+    x = F.group_norm(x, group_norm_num_groups, group_norm_weight, group_norm_bias)
     x = torch.min(x, dim=1, keepdim=True)[0]
     x = x + bias
     return x

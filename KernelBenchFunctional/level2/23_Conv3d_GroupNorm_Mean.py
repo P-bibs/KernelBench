@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size', 'num_groups']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'conv_stride', 'conv_padding', 'conv_dilation', 'conv_groups', 'group_norm_weight', 'group_norm_bias', 'group_norm_num_groups', 'group_norm_eps']
+REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'group_norm_weight', 'group_norm_bias', 'group_norm_num_groups']
 REQUIRED_FLAT_STATE_NAMES = ['conv_weight', 'conv_bias', 'group_norm_weight', 'group_norm_bias']
 
 
@@ -51,10 +51,6 @@ def extract_state_kwargs(model):
         state_kwargs['conv_bias'] = flat_state['conv_bias']
     else:
         state_kwargs['conv_bias'] = getattr(model.conv, 'bias', None)
-    state_kwargs['conv_stride'] = model.conv.stride
-    state_kwargs['conv_padding'] = model.conv.padding
-    state_kwargs['conv_dilation'] = model.conv.dilation
-    state_kwargs['conv_groups'] = model.conv.groups
     # State for group_norm (nn.GroupNorm)
     if 'group_norm_weight' in flat_state:
         state_kwargs['group_norm_weight'] = flat_state['group_norm_weight']
@@ -65,7 +61,6 @@ def extract_state_kwargs(model):
     else:
         state_kwargs['group_norm_bias'] = getattr(model.group_norm, 'bias', None)
     state_kwargs['group_norm_num_groups'] = model.group_norm.num_groups
-    state_kwargs['group_norm_eps'] = model.group_norm.eps
     missing = [name for name in REQUIRED_STATE_NAMES if name not in state_kwargs]
     if missing:
         raise RuntimeError(f'Missing required state entries: {missing}')
@@ -86,17 +81,12 @@ def functional_model(
     *,
     conv_weight,
     conv_bias,
-    conv_stride,
-    conv_padding,
-    conv_dilation,
-    conv_groups,
     group_norm_weight,
     group_norm_bias,
     group_norm_num_groups,
-    group_norm_eps,
 ):
-    x = F.conv3d(x, conv_weight, conv_bias, stride=conv_stride, padding=conv_padding, dilation=conv_dilation, groups=conv_groups)
-    x = F.group_norm(x, group_norm_num_groups, group_norm_weight, group_norm_bias, eps=group_norm_eps)
+    x = F.conv3d(x, conv_weight, conv_bias)
+    x = F.group_norm(x, group_norm_num_groups, group_norm_weight, group_norm_bias)
     x = x.mean(dim=[1, 2, 3, 4])
     return x
 batch_size = 128

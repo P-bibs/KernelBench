@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_features', 'out_features', 'num_groups', 'hardtanh_min', 'hardtanh_max']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['gemm_weight', 'gemm_bias', 'group_norm_weight', 'group_norm_bias', 'group_norm_num_groups', 'group_norm_eps', 'hardtanh_min_val', 'hardtanh_max_val', 'hardtanh_inplace']
+REQUIRED_STATE_NAMES = ['gemm_weight', 'gemm_bias', 'group_norm_weight', 'group_norm_bias', 'group_norm_num_groups', 'hardtanh_min_val', 'hardtanh_max_val']
 REQUIRED_FLAT_STATE_NAMES = ['gemm_weight', 'gemm_bias', 'group_norm_weight', 'group_norm_bias']
 
 
@@ -62,11 +62,9 @@ def extract_state_kwargs(model):
     else:
         state_kwargs['group_norm_bias'] = getattr(model.group_norm, 'bias', None)
     state_kwargs['group_norm_num_groups'] = model.group_norm.num_groups
-    state_kwargs['group_norm_eps'] = model.group_norm.eps
     # State for hardtanh (nn.Hardtanh)
     state_kwargs['hardtanh_min_val'] = model.hardtanh.min_val
     state_kwargs['hardtanh_max_val'] = model.hardtanh.max_val
-    state_kwargs['hardtanh_inplace'] = model.hardtanh.inplace
     missing = [name for name in REQUIRED_STATE_NAMES if name not in state_kwargs]
     if missing:
         raise RuntimeError(f'Missing required state entries: {missing}')
@@ -90,14 +88,12 @@ def functional_model(
     group_norm_weight,
     group_norm_bias,
     group_norm_num_groups,
-    group_norm_eps,
     hardtanh_min_val,
     hardtanh_max_val,
-    hardtanh_inplace,
 ):
     x = F.linear(x, gemm_weight, gemm_bias)
-    x = F.group_norm(x, group_norm_num_groups, group_norm_weight, group_norm_bias, eps=group_norm_eps)
-    x = F.hardtanh(x, min_val=hardtanh_min_val, max_val=hardtanh_max_val, inplace=hardtanh_inplace)
+    x = F.group_norm(x, group_norm_num_groups, group_norm_weight, group_norm_bias)
+    x = F.hardtanh(x, min_val=hardtanh_min_val, max_val=hardtanh_max_val)
     return x
 batch_size = 1024
 in_features = 8192

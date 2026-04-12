@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size', 'divisor', 'pool_size', 'bias_shape', 'sum_dim']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'conv_stride', 'conv_padding', 'conv_dilation', 'conv_groups', 'max_pool_kernel_size', 'max_pool_stride', 'max_pool_padding', 'max_pool_dilation', 'max_pool_ceil_mode', 'max_pool_return_indices', 'global_avg_pool_output_size', 'divisor', 'bias', 'sum_dim']
+REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'max_pool_kernel_size', 'global_avg_pool_output_size', 'divisor', 'bias', 'sum_dim']
 REQUIRED_FLAT_STATE_NAMES = ['conv_weight', 'conv_bias', 'bias']
 
 
@@ -56,17 +56,8 @@ def extract_state_kwargs(model):
         state_kwargs['conv_bias'] = flat_state['conv_bias']
     else:
         state_kwargs['conv_bias'] = getattr(model.conv, 'bias', None)
-    state_kwargs['conv_stride'] = model.conv.stride
-    state_kwargs['conv_padding'] = model.conv.padding
-    state_kwargs['conv_dilation'] = model.conv.dilation
-    state_kwargs['conv_groups'] = model.conv.groups
     # State for max_pool (nn.MaxPool3d)
     state_kwargs['max_pool_kernel_size'] = model.max_pool.kernel_size
-    state_kwargs['max_pool_stride'] = model.max_pool.stride
-    state_kwargs['max_pool_padding'] = model.max_pool.padding
-    state_kwargs['max_pool_dilation'] = model.max_pool.dilation
-    state_kwargs['max_pool_ceil_mode'] = model.max_pool.ceil_mode
-    state_kwargs['max_pool_return_indices'] = model.max_pool.return_indices
     # State for global_avg_pool (nn.AdaptiveAvgPool3d)
     state_kwargs['global_avg_pool_output_size'] = model.global_avg_pool.output_size
     if 'divisor' in flat_state:
@@ -101,24 +92,15 @@ def functional_model(
     *,
     conv_weight,
     conv_bias,
-    conv_stride,
-    conv_padding,
-    conv_dilation,
-    conv_groups,
     max_pool_kernel_size,
-    max_pool_stride,
-    max_pool_padding,
-    max_pool_dilation,
-    max_pool_ceil_mode,
-    max_pool_return_indices,
     global_avg_pool_output_size,
     divisor,
     bias,
     sum_dim,
 ):
-    x = F.conv3d(x, conv_weight, conv_bias, stride=conv_stride, padding=conv_padding, dilation=conv_dilation, groups=conv_groups)
+    x = F.conv3d(x, conv_weight, conv_bias)
     x = x / divisor
-    x = F.max_pool3d(x, kernel_size=max_pool_kernel_size, stride=max_pool_stride, padding=max_pool_padding, dilation=max_pool_dilation, ceil_mode=max_pool_ceil_mode, return_indices=max_pool_return_indices)
+    x = F.max_pool3d(x, kernel_size=max_pool_kernel_size)
     x = F.adaptive_avg_pool3d(x, global_avg_pool_output_size)
     x = x + bias
     x = torch.sum(x, dim=sum_dim)

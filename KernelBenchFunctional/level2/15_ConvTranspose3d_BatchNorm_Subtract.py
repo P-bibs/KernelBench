@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size', 'stride', 'padding', 'bias']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'conv_transpose_stride', 'conv_transpose_padding', 'conv_transpose_output_padding', 'conv_transpose_groups', 'conv_transpose_dilation', 'batch_norm_running_mean', 'batch_norm_running_var', 'batch_norm_weight', 'batch_norm_bias', 'batch_norm_momentum', 'batch_norm_eps']
+REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'conv_transpose_stride', 'conv_transpose_padding', 'batch_norm_running_mean', 'batch_norm_running_var', 'batch_norm_weight', 'batch_norm_bias']
 REQUIRED_FLAT_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'batch_norm_running_mean', 'batch_norm_running_var', 'batch_norm_weight', 'batch_norm_bias']
 
 
@@ -53,9 +53,6 @@ def extract_state_kwargs(model):
         state_kwargs['conv_transpose_bias'] = getattr(model.conv_transpose, 'bias', None)
     state_kwargs['conv_transpose_stride'] = model.conv_transpose.stride
     state_kwargs['conv_transpose_padding'] = model.conv_transpose.padding
-    state_kwargs['conv_transpose_output_padding'] = model.conv_transpose.output_padding
-    state_kwargs['conv_transpose_groups'] = model.conv_transpose.groups
-    state_kwargs['conv_transpose_dilation'] = model.conv_transpose.dilation
     # State for batch_norm (nn.BatchNorm3d)
     if 'batch_norm_running_mean' in flat_state:
         state_kwargs['batch_norm_running_mean'] = flat_state['batch_norm_running_mean']
@@ -73,8 +70,6 @@ def extract_state_kwargs(model):
         state_kwargs['batch_norm_bias'] = flat_state['batch_norm_bias']
     else:
         state_kwargs['batch_norm_bias'] = getattr(model.batch_norm, 'bias', None)
-    state_kwargs['batch_norm_momentum'] = model.batch_norm.momentum
-    state_kwargs['batch_norm_eps'] = model.batch_norm.eps
     missing = [name for name in REQUIRED_STATE_NAMES if name not in state_kwargs]
     if missing:
         raise RuntimeError(f'Missing required state entries: {missing}')
@@ -97,18 +92,13 @@ def functional_model(
     conv_transpose_bias,
     conv_transpose_stride,
     conv_transpose_padding,
-    conv_transpose_output_padding,
-    conv_transpose_groups,
-    conv_transpose_dilation,
     batch_norm_running_mean,
     batch_norm_running_var,
     batch_norm_weight,
     batch_norm_bias,
-    batch_norm_momentum,
-    batch_norm_eps,
 ):
-    x = F.conv_transpose3d(x, conv_transpose_weight, conv_transpose_bias, stride=conv_transpose_stride, padding=conv_transpose_padding, output_padding=conv_transpose_output_padding, groups=conv_transpose_groups, dilation=conv_transpose_dilation)
-    x = F.batch_norm(x, batch_norm_running_mean, batch_norm_running_var, batch_norm_weight, batch_norm_bias, training=False, momentum=batch_norm_momentum, eps=batch_norm_eps)
+    x = F.conv_transpose3d(x, conv_transpose_weight, conv_transpose_bias, stride=conv_transpose_stride, padding=conv_transpose_padding)
+    x = F.batch_norm(x, batch_norm_running_mean, batch_norm_running_var, batch_norm_weight, batch_norm_bias, training=False)
     x = x - torch.mean(x, dim=(2, 3, 4), keepdim=True)
     return x
 batch_size = 16

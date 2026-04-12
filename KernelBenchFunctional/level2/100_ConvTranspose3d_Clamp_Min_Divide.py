@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size', 'stride', 'padding', 'min_value', 'divisor']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'conv_transpose_stride', 'conv_transpose_padding', 'conv_transpose_output_padding', 'conv_transpose_groups', 'conv_transpose_dilation', 'min_value', 'divisor']
+REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'conv_transpose_stride', 'conv_transpose_padding', 'min_value', 'divisor']
 REQUIRED_FLAT_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias']
 
 
@@ -55,9 +55,6 @@ def extract_state_kwargs(model):
         state_kwargs['conv_transpose_bias'] = getattr(model.conv_transpose, 'bias', None)
     state_kwargs['conv_transpose_stride'] = model.conv_transpose.stride
     state_kwargs['conv_transpose_padding'] = model.conv_transpose.padding
-    state_kwargs['conv_transpose_output_padding'] = model.conv_transpose.output_padding
-    state_kwargs['conv_transpose_groups'] = model.conv_transpose.groups
-    state_kwargs['conv_transpose_dilation'] = model.conv_transpose.dilation
     if 'min_value' in flat_state:
         state_kwargs['min_value'] = flat_state['min_value']
     else:
@@ -88,13 +85,10 @@ def functional_model(
     conv_transpose_bias,
     conv_transpose_stride,
     conv_transpose_padding,
-    conv_transpose_output_padding,
-    conv_transpose_groups,
-    conv_transpose_dilation,
     min_value,
     divisor,
 ):
-    x = F.conv_transpose3d(x, conv_transpose_weight, conv_transpose_bias, stride=conv_transpose_stride, padding=conv_transpose_padding, output_padding=conv_transpose_output_padding, groups=conv_transpose_groups, dilation=conv_transpose_dilation)
+    x = F.conv_transpose3d(x, conv_transpose_weight, conv_transpose_bias, stride=conv_transpose_stride, padding=conv_transpose_padding)
     x = torch.clamp(x, min=min_value)
     x = x / divisor
     return x

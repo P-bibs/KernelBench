@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size', 'stride', 'padding', 'output_padding', 'bias']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'conv_transpose_stride', 'conv_transpose_padding', 'conv_transpose_output_padding', 'conv_transpose_groups', 'conv_transpose_dilation', 'softmax_dim']
+REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'conv_transpose_stride', 'conv_transpose_padding', 'conv_transpose_output_padding', 'softmax_dim']
 REQUIRED_FLAT_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias']
 
 
@@ -55,8 +55,6 @@ def extract_state_kwargs(model):
     state_kwargs['conv_transpose_stride'] = model.conv_transpose.stride
     state_kwargs['conv_transpose_padding'] = model.conv_transpose.padding
     state_kwargs['conv_transpose_output_padding'] = model.conv_transpose.output_padding
-    state_kwargs['conv_transpose_groups'] = model.conv_transpose.groups
-    state_kwargs['conv_transpose_dilation'] = model.conv_transpose.dilation
     # State for softmax (nn.Softmax)
     state_kwargs['softmax_dim'] = model.softmax.dim
     # State for sigmoid (nn.Sigmoid)
@@ -83,11 +81,9 @@ def functional_model(
     conv_transpose_stride,
     conv_transpose_padding,
     conv_transpose_output_padding,
-    conv_transpose_groups,
-    conv_transpose_dilation,
     softmax_dim,
 ):
-    x = F.conv_transpose3d(x, conv_transpose_weight, conv_transpose_bias, stride=conv_transpose_stride, padding=conv_transpose_padding, output_padding=conv_transpose_output_padding, groups=conv_transpose_groups, dilation=conv_transpose_dilation)
+    x = F.conv_transpose3d(x, conv_transpose_weight, conv_transpose_bias, stride=conv_transpose_stride, padding=conv_transpose_padding, output_padding=conv_transpose_output_padding)
     x = F.softmax(x, dim=softmax_dim)
     x = torch.sigmoid(x)
     return x

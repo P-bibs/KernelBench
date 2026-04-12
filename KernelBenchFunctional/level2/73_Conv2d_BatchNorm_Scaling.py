@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size', 'scaling_factor']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'conv_stride', 'conv_padding', 'conv_dilation', 'conv_groups', 'bn_running_mean', 'bn_running_var', 'bn_weight', 'bn_bias', 'bn_momentum', 'bn_eps', 'scaling_factor']
+REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'bn_running_mean', 'bn_running_var', 'bn_weight', 'bn_bias', 'scaling_factor']
 REQUIRED_FLAT_STATE_NAMES = ['conv_weight', 'conv_bias', 'bn_running_mean', 'bn_running_var', 'bn_weight', 'bn_bias']
 
 
@@ -52,10 +52,6 @@ def extract_state_kwargs(model):
         state_kwargs['conv_bias'] = flat_state['conv_bias']
     else:
         state_kwargs['conv_bias'] = getattr(model.conv, 'bias', None)
-    state_kwargs['conv_stride'] = model.conv.stride
-    state_kwargs['conv_padding'] = model.conv.padding
-    state_kwargs['conv_dilation'] = model.conv.dilation
-    state_kwargs['conv_groups'] = model.conv.groups
     # State for bn (nn.BatchNorm2d)
     if 'bn_running_mean' in flat_state:
         state_kwargs['bn_running_mean'] = flat_state['bn_running_mean']
@@ -73,8 +69,6 @@ def extract_state_kwargs(model):
         state_kwargs['bn_bias'] = flat_state['bn_bias']
     else:
         state_kwargs['bn_bias'] = getattr(model.bn, 'bias', None)
-    state_kwargs['bn_momentum'] = model.bn.momentum
-    state_kwargs['bn_eps'] = model.bn.eps
     if 'scaling_factor' in flat_state:
         state_kwargs['scaling_factor'] = flat_state['scaling_factor']
     else:
@@ -99,20 +93,14 @@ def functional_model(
     *,
     conv_weight,
     conv_bias,
-    conv_stride,
-    conv_padding,
-    conv_dilation,
-    conv_groups,
     bn_running_mean,
     bn_running_var,
     bn_weight,
     bn_bias,
-    bn_momentum,
-    bn_eps,
     scaling_factor,
 ):
-    x = F.conv2d(x, conv_weight, conv_bias, stride=conv_stride, padding=conv_padding, dilation=conv_dilation, groups=conv_groups)
-    x = F.batch_norm(x, bn_running_mean, bn_running_var, bn_weight, bn_bias, training=False, momentum=bn_momentum, eps=bn_eps)
+    x = F.conv2d(x, conv_weight, conv_bias)
+    x = F.batch_norm(x, bn_running_mean, bn_running_var, bn_weight, bn_bias, training=False)
     x = x * scaling_factor
     return x
 batch_size = 128

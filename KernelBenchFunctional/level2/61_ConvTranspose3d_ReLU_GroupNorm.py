@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size', 'groups', 'bias']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'conv_transpose_stride', 'conv_transpose_padding', 'conv_transpose_output_padding', 'conv_transpose_groups', 'conv_transpose_dilation', 'relu_inplace', 'group_norm_weight', 'group_norm_bias', 'group_norm_num_groups', 'group_norm_eps']
+REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'group_norm_weight', 'group_norm_bias', 'group_norm_num_groups']
 REQUIRED_FLAT_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'group_norm_weight', 'group_norm_bias']
 
 
@@ -52,13 +52,7 @@ def extract_state_kwargs(model):
         state_kwargs['conv_transpose_bias'] = flat_state['conv_transpose_bias']
     else:
         state_kwargs['conv_transpose_bias'] = getattr(model.conv_transpose, 'bias', None)
-    state_kwargs['conv_transpose_stride'] = model.conv_transpose.stride
-    state_kwargs['conv_transpose_padding'] = model.conv_transpose.padding
-    state_kwargs['conv_transpose_output_padding'] = model.conv_transpose.output_padding
-    state_kwargs['conv_transpose_groups'] = model.conv_transpose.groups
-    state_kwargs['conv_transpose_dilation'] = model.conv_transpose.dilation
     # State for relu (nn.ReLU)
-    state_kwargs['relu_inplace'] = model.relu.inplace
     # State for group_norm (nn.GroupNorm)
     if 'group_norm_weight' in flat_state:
         state_kwargs['group_norm_weight'] = flat_state['group_norm_weight']
@@ -69,7 +63,6 @@ def extract_state_kwargs(model):
     else:
         state_kwargs['group_norm_bias'] = getattr(model.group_norm, 'bias', None)
     state_kwargs['group_norm_num_groups'] = model.group_norm.num_groups
-    state_kwargs['group_norm_eps'] = model.group_norm.eps
     missing = [name for name in REQUIRED_STATE_NAMES if name not in state_kwargs]
     if missing:
         raise RuntimeError(f'Missing required state entries: {missing}')
@@ -90,20 +83,13 @@ def functional_model(
     *,
     conv_transpose_weight,
     conv_transpose_bias,
-    conv_transpose_stride,
-    conv_transpose_padding,
-    conv_transpose_output_padding,
-    conv_transpose_groups,
-    conv_transpose_dilation,
-    relu_inplace,
     group_norm_weight,
     group_norm_bias,
     group_norm_num_groups,
-    group_norm_eps,
 ):
-    x = F.conv_transpose3d(x, conv_transpose_weight, conv_transpose_bias, stride=conv_transpose_stride, padding=conv_transpose_padding, output_padding=conv_transpose_output_padding, groups=conv_transpose_groups, dilation=conv_transpose_dilation)
-    x = F.relu(x, inplace=relu_inplace)
-    x = F.group_norm(x, group_norm_num_groups, group_norm_weight, group_norm_bias, eps=group_norm_eps)
+    x = F.conv_transpose3d(x, conv_transpose_weight, conv_transpose_bias)
+    x = F.relu(x)
+    x = F.group_norm(x, group_norm_num_groups, group_norm_weight, group_norm_bias)
     return x
 batch_size = 16
 in_channels = 64

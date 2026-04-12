@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size', 'divide_by']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'conv_stride', 'conv_padding', 'conv_dilation', 'conv_groups', 'instance_norm_running_mean', 'instance_norm_running_var', 'instance_norm_weight', 'instance_norm_bias', 'instance_norm_use_input_stats', 'instance_norm_momentum', 'instance_norm_eps', 'divide_by']
+REQUIRED_STATE_NAMES = ['conv_weight', 'conv_bias', 'instance_norm_running_mean', 'instance_norm_running_var', 'instance_norm_weight', 'instance_norm_bias', 'divide_by']
 REQUIRED_FLAT_STATE_NAMES = ['conv_weight', 'conv_bias', 'instance_norm_running_mean', 'instance_norm_running_var', 'instance_norm_weight', 'instance_norm_bias']
 
 
@@ -52,10 +52,6 @@ def extract_state_kwargs(model):
         state_kwargs['conv_bias'] = flat_state['conv_bias']
     else:
         state_kwargs['conv_bias'] = getattr(model.conv, 'bias', None)
-    state_kwargs['conv_stride'] = model.conv.stride
-    state_kwargs['conv_padding'] = model.conv.padding
-    state_kwargs['conv_dilation'] = model.conv.dilation
-    state_kwargs['conv_groups'] = model.conv.groups
     # State for instance_norm (nn.InstanceNorm2d)
     if 'instance_norm_running_mean' in flat_state:
         state_kwargs['instance_norm_running_mean'] = flat_state['instance_norm_running_mean']
@@ -73,9 +69,6 @@ def extract_state_kwargs(model):
         state_kwargs['instance_norm_bias'] = flat_state['instance_norm_bias']
     else:
         state_kwargs['instance_norm_bias'] = getattr(model.instance_norm, 'bias', None)
-    state_kwargs['instance_norm_use_input_stats'] = not model.instance_norm.track_running_stats
-    state_kwargs['instance_norm_momentum'] = model.instance_norm.momentum
-    state_kwargs['instance_norm_eps'] = model.instance_norm.eps
     if 'divide_by' in flat_state:
         state_kwargs['divide_by'] = flat_state['divide_by']
     else:
@@ -100,21 +93,14 @@ def functional_model(
     *,
     conv_weight,
     conv_bias,
-    conv_stride,
-    conv_padding,
-    conv_dilation,
-    conv_groups,
     instance_norm_running_mean,
     instance_norm_running_var,
     instance_norm_weight,
     instance_norm_bias,
-    instance_norm_use_input_stats,
-    instance_norm_momentum,
-    instance_norm_eps,
     divide_by,
 ):
-    x = F.conv2d(x, conv_weight, conv_bias, stride=conv_stride, padding=conv_padding, dilation=conv_dilation, groups=conv_groups)
-    x = F.instance_norm(x, instance_norm_running_mean, instance_norm_running_var, instance_norm_weight, instance_norm_bias, use_input_stats=instance_norm_use_input_stats, momentum=instance_norm_momentum, eps=instance_norm_eps)
+    x = F.conv2d(x, conv_weight, conv_bias)
+    x = F.instance_norm(x, instance_norm_running_mean, instance_norm_running_var, instance_norm_weight, instance_norm_bias)
     x = x / divide_by
     return x
 batch_size = 128

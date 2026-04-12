@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_features', 'out_features', 'kernel_size', 'scale_factor']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['matmul_weight', 'matmul_bias', 'max_pool_kernel_size', 'max_pool_stride', 'max_pool_padding', 'max_pool_dilation', 'max_pool_ceil_mode', 'max_pool_return_indices', 'scale_factor']
+REQUIRED_STATE_NAMES = ['matmul_weight', 'matmul_bias', 'max_pool_kernel_size', 'scale_factor']
 REQUIRED_FLAT_STATE_NAMES = ['matmul_weight', 'matmul_bias']
 
 
@@ -54,11 +54,6 @@ def extract_state_kwargs(model):
         state_kwargs['matmul_bias'] = getattr(model.matmul, 'bias', None)
     # State for max_pool (nn.MaxPool1d)
     state_kwargs['max_pool_kernel_size'] = model.max_pool.kernel_size
-    state_kwargs['max_pool_stride'] = model.max_pool.stride
-    state_kwargs['max_pool_padding'] = model.max_pool.padding
-    state_kwargs['max_pool_dilation'] = model.max_pool.dilation
-    state_kwargs['max_pool_ceil_mode'] = model.max_pool.ceil_mode
-    state_kwargs['max_pool_return_indices'] = model.max_pool.return_indices
     if 'scale_factor' in flat_state:
         state_kwargs['scale_factor'] = flat_state['scale_factor']
     else:
@@ -84,15 +79,10 @@ def functional_model(
     matmul_weight,
     matmul_bias,
     max_pool_kernel_size,
-    max_pool_stride,
-    max_pool_padding,
-    max_pool_dilation,
-    max_pool_ceil_mode,
-    max_pool_return_indices,
     scale_factor,
 ):
     x = F.linear(x, matmul_weight, matmul_bias)
-    x = F.max_pool1d(x.unsqueeze(1), kernel_size=max_pool_kernel_size, stride=max_pool_stride, padding=max_pool_padding, dilation=max_pool_dilation, ceil_mode=max_pool_ceil_mode, return_indices=max_pool_return_indices).squeeze(1)
+    x = F.max_pool1d(x.unsqueeze(1), kernel_size=max_pool_kernel_size).squeeze(1)
     x = torch.sum(x, dim=1)
     x = x * scale_factor
     return x

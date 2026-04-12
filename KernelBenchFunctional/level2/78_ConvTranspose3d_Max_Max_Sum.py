@@ -8,7 +8,7 @@ import torch.nn as nn
 INIT_PARAM_NAMES = ['in_channels', 'out_channels', 'kernel_size', 'stride', 'padding']
 FORWARD_ARG_NAMES = ['x']
 FORWARD_FREE_VARS = []
-REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'conv_transpose_stride', 'conv_transpose_padding', 'conv_transpose_output_padding', 'conv_transpose_groups', 'conv_transpose_dilation', 'max_pool1_kernel_size', 'max_pool1_stride', 'max_pool1_padding', 'max_pool1_dilation', 'max_pool1_ceil_mode', 'max_pool1_return_indices', 'max_pool2_kernel_size', 'max_pool2_stride', 'max_pool2_padding', 'max_pool2_dilation', 'max_pool2_ceil_mode', 'max_pool2_return_indices']
+REQUIRED_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias', 'conv_transpose_stride', 'conv_transpose_padding', 'max_pool1_kernel_size', 'max_pool2_kernel_size']
 REQUIRED_FLAT_STATE_NAMES = ['conv_transpose_weight', 'conv_transpose_bias']
 
 
@@ -54,23 +54,10 @@ def extract_state_kwargs(model):
         state_kwargs['conv_transpose_bias'] = getattr(model.conv_transpose, 'bias', None)
     state_kwargs['conv_transpose_stride'] = model.conv_transpose.stride
     state_kwargs['conv_transpose_padding'] = model.conv_transpose.padding
-    state_kwargs['conv_transpose_output_padding'] = model.conv_transpose.output_padding
-    state_kwargs['conv_transpose_groups'] = model.conv_transpose.groups
-    state_kwargs['conv_transpose_dilation'] = model.conv_transpose.dilation
     # State for max_pool1 (nn.MaxPool3d)
     state_kwargs['max_pool1_kernel_size'] = model.max_pool1.kernel_size
-    state_kwargs['max_pool1_stride'] = model.max_pool1.stride
-    state_kwargs['max_pool1_padding'] = model.max_pool1.padding
-    state_kwargs['max_pool1_dilation'] = model.max_pool1.dilation
-    state_kwargs['max_pool1_ceil_mode'] = model.max_pool1.ceil_mode
-    state_kwargs['max_pool1_return_indices'] = model.max_pool1.return_indices
     # State for max_pool2 (nn.MaxPool3d)
     state_kwargs['max_pool2_kernel_size'] = model.max_pool2.kernel_size
-    state_kwargs['max_pool2_stride'] = model.max_pool2.stride
-    state_kwargs['max_pool2_padding'] = model.max_pool2.padding
-    state_kwargs['max_pool2_dilation'] = model.max_pool2.dilation
-    state_kwargs['max_pool2_ceil_mode'] = model.max_pool2.ceil_mode
-    state_kwargs['max_pool2_return_indices'] = model.max_pool2.return_indices
     missing = [name for name in REQUIRED_STATE_NAMES if name not in state_kwargs]
     if missing:
         raise RuntimeError(f'Missing required state entries: {missing}')
@@ -93,25 +80,12 @@ def functional_model(
     conv_transpose_bias,
     conv_transpose_stride,
     conv_transpose_padding,
-    conv_transpose_output_padding,
-    conv_transpose_groups,
-    conv_transpose_dilation,
     max_pool1_kernel_size,
-    max_pool1_stride,
-    max_pool1_padding,
-    max_pool1_dilation,
-    max_pool1_ceil_mode,
-    max_pool1_return_indices,
     max_pool2_kernel_size,
-    max_pool2_stride,
-    max_pool2_padding,
-    max_pool2_dilation,
-    max_pool2_ceil_mode,
-    max_pool2_return_indices,
 ):
-    x = F.conv_transpose3d(x, conv_transpose_weight, conv_transpose_bias, stride=conv_transpose_stride, padding=conv_transpose_padding, output_padding=conv_transpose_output_padding, groups=conv_transpose_groups, dilation=conv_transpose_dilation)
-    x = F.max_pool3d(x, kernel_size=max_pool1_kernel_size, stride=max_pool1_stride, padding=max_pool1_padding, dilation=max_pool1_dilation, ceil_mode=max_pool1_ceil_mode, return_indices=max_pool1_return_indices)
-    x = F.max_pool3d(x, kernel_size=max_pool2_kernel_size, stride=max_pool2_stride, padding=max_pool2_padding, dilation=max_pool2_dilation, ceil_mode=max_pool2_ceil_mode, return_indices=max_pool2_return_indices)
+    x = F.conv_transpose3d(x, conv_transpose_weight, conv_transpose_bias, stride=conv_transpose_stride, padding=conv_transpose_padding)
+    x = F.max_pool3d(x, kernel_size=max_pool1_kernel_size)
+    x = F.max_pool3d(x, kernel_size=max_pool2_kernel_size)
     x = torch.sum(x, dim=1, keepdim=True)
     return x
 batch_size = 16
