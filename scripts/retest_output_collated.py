@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Test autocomp output with advanced generators
+"""
 
 from __future__ import annotations
 
@@ -17,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 import torch
+from tqdm import tqdm
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -416,13 +420,15 @@ def execute_tasks_in_parallel(
     batch_size = max(1, len(gpu_ids))
 
     remaining = list(tasks)
-    while remaining:
-        current_batch = remaining[:batch_size]
-        remaining = remaining[batch_size:]
-        batch_results = run_task_batch(current_batch, timeout=timeout)
-        results.extend(batch_results)
-        if fail_fast and any(not result["correctness"] for result in batch_results):
-            break
+    with tqdm(total=len(tasks), desc="Retesting kernels", unit="task") as progress:
+        while remaining:
+            current_batch = remaining[:batch_size]
+            remaining = remaining[batch_size:]
+            batch_results = run_task_batch(current_batch, timeout=timeout)
+            results.extend(batch_results)
+            progress.update(len(batch_results))
+            if fail_fast and any(not result["correctness"] for result in batch_results):
+                break
     return results
 
 

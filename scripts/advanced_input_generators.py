@@ -269,24 +269,54 @@ ADVANCED_INPUT_GENERATORS: dict[str, Generator] = {
 }
 
 
-SIGNED_ACTIVATION_PROBLEMS = {
-    "level1/19_ReLU.py",
-    "level1/20_LeakyReLU.py",
-    "level1/21_Sigmoid.py",
-    "level1/22_Tanh.py",
-    "level1/25_Swish.py",
-    "level1/26_GELU_.py",
-    "level1/27_SELU_.py",
-    "level1/28_HardSigmoid.py",
-    "level1/29_Softplus.py",
-    "level1/30_Softsign.py",
-    "level1/31_ELU.py",
-    "level1/32_HardTanh.py",
-    "level1/36_RMSNorm_.py",
-    "level1/38_L1Norm_.py",
-    "level1/39_L2Norm_.py",
-    "level1/88_MinGPTNewGelu.py",
-}
+SIGNED_ACTIVATION_TOKENS = (
+    "relu",
+    "leakyrelu",
+    "hardtanh",
+    "hardswish",
+    "hardsigmoid",
+    "gelu",
+    "swish",
+    "mish",
+    "sigmoid",
+    "tanh",
+    "elu",
+    "selu",
+    "softplus",
+    "softsign",
+    "clamp",
+    "rmsnorm",
+    "l1norm",
+    "l2norm",
+    "hingeloss",
+    "huberloss",
+)
+
+
+NORM_TOKENS = ("batchnorm", "instancenorm", "groupnorm", "layernorm", "rmsnorm")
+
+
+SOFTMAX_TOKENS = (
+    "softmax",
+    "log_softmax",
+    "logsoftmax",
+    "logsumexp",
+    "crossentropyloss",
+    "kldivloss",
+)
+
+
+MAXPOOL_ARG_REDUCE_TOKENS = (
+    "maxpool",
+    "max_pool",
+    "max_pooling",
+    "argmax",
+    "argmin",
+    "torch.max(",
+    "torch.min(",
+    "max_reduction",
+    "min_reduction",
+)
 
 
 QUASI_STRUCTURED_MATMUL_PROBLEMS = {
@@ -326,11 +356,15 @@ def _problem_text(relpath: str) -> str:
     return (PROBLEM_ROOT / relpath).read_text(encoding="utf-8")
 
 
+def _problem_search_text(relpath: str) -> str:
+    return f"{relpath}\n{_problem_text(relpath)}".lower()
+
+
 def _classify_problem(relpath: str) -> frozenset[str]:
     generators: set[str] = set()
-    text = _problem_text(relpath)
+    text = _problem_search_text(relpath)
 
-    if relpath in SIGNED_ACTIVATION_PROBLEMS:
+    if any(token in text for token in SIGNED_ACTIVATION_TOKENS):
         generators.add(SIGNED_ACTIVATION_STRESS)
 
     if relpath in QUASI_STRUCTURED_MATMUL_PROBLEMS:
@@ -342,25 +376,13 @@ def _classify_problem(relpath: str) -> frozenset[str]:
     if relpath in SDPA_PROBLEMS:
         generators.add(SDPA_PATTERN_STRESS)
 
-    if any(token in text for token in ("BatchNorm", "InstanceNorm", "GroupNorm", "LayerNorm", "RMSNorm")):
+    if any(token in text for token in NORM_TOKENS):
         generators.add(AXIS_SIGNATURE_NORM_STRESS)
 
-    if any(token in text for token in ("softmax", "Softmax", "log_softmax", "logsumexp", "CrossEntropyLoss", "KLDivLoss")):
+    if any(token in text for token in SOFTMAX_TOKENS):
         generators.add(SOFTMAX_EXTREME_LOGITS_STRESS)
 
-    if any(
-        token in text
-        for token in (
-            "MaxPool",
-            "Max_Pooling",
-            "argmax",
-            "argmin",
-            "torch.max(",
-            "torch.min(",
-            "Max_reduction",
-            "Min_reduction",
-        )
-    ):
+    if any(token in text for token in MAXPOOL_ARG_REDUCE_TOKENS):
         generators.add(MAXPOOL_ARG_REDUCE_TIE_STRESS)
 
     return frozenset(sorted(generators))
